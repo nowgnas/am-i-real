@@ -30,7 +30,8 @@ export default function QuestionScreen({
 
   return (
     <div className={`screen-wrap ${active ? 'visible' : 'hidden-down'}`}>
-      <div className="glass-card w-full max-w-2xl p-8 sm:p-10">
+      <div className="screen-scroll w-full flex justify-center">
+      <div className="glass-card w-full max-w-2xl p-8 sm:p-10 my-auto">
         {/* Progress */}
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-star-400/60 uppercase tracking-widest">
@@ -99,6 +100,7 @@ export default function QuestionScreen({
             {isLast ? '결과 분석 →' : '다음 →'}
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
