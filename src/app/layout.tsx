@@ -44,14 +44,6 @@ export const metadata: Metadata = {
     title: '나는 진짜인가? | Am I Real?',
     description:
       '8가지 철학적 질문으로 당신이 어떤 우주에 존재하는지 진단합니다. 시뮬레이션 NPC부터 우주의 관찰자까지, 7가지 결과 유형이 당신을 기다립니다.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: '나는 진짜인가? — 우주 존재 진단',
-      },
-    ],
   },
 
   // Twitter
@@ -60,7 +52,6 @@ export const metadata: Metadata = {
     title: '나는 진짜인가? | Am I Real?',
     description:
       '평행우주, 시뮬레이션 이론, 통속의 뇌, 자유의지 — 당신은 어떤 우주에 존재하는가?',
-    images: ['/og-image.png'],
   },
 
   // Robots
