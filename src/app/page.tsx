@@ -105,7 +105,7 @@ export default function Home() {
     if (currentQ > 0) setCurrentQ((q) => q - 1);
   };
 
-  const showResult = () => transition('result');
+  const showResult = useCallback(() => transition('result'), [transition]);
   const restartQuiz = () => {
     setScreen('intro');
     setPrevScreen(null);

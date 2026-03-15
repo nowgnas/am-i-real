@@ -78,6 +78,7 @@ export default function SharedResultView({ resultKey, remainingMs }: Props) {
 
       const prev = card.style.left;
       card.style.left = '0px';
+      card.style.zIndex = '-1';
       await new Promise((r) => setTimeout(r, 80));
 
       const canvas = await html2canvas(card, {
@@ -87,6 +88,7 @@ export default function SharedResultView({ resultKey, remainingMs }: Props) {
         useCORS: true,
       });
       card.style.left = prev;
+      card.style.zIndex = '9999';
 
       const link = document.createElement('a');
       link.download = `am-i-real-${key}.png`;
@@ -148,11 +150,17 @@ export default function SharedResultView({ resultKey, remainingMs }: Props) {
 
           {/* Quote */}
           <blockquote
-            className="border-l-2 pl-4 py-2 mb-6 rounded-r-lg text-sm italic leading-relaxed"
-            style={{ borderColor: r.color, background: `${r.color}10`, color: `${r.color}cc` }}
+            className="border-l-2 pl-4 py-3 mb-6 rounded-r-lg text-sm leading-relaxed"
+            style={{
+              borderColor: r.color,
+              background: `${r.color}10`,
+              color: `${r.color}cc`,
+              wordBreak: 'keep-all',
+              overflowWrap: 'break-word',
+            }}
           >
-            <p className="mb-1">"{r.quote}"</p>
-            <cite className="text-xs not-italic opacity-70">{r.quoteAuthor}</cite>
+            <p className="mb-2 italic">"{r.quote}"</p>
+            <cite className="text-xs not-italic opacity-60 block">{r.quoteAuthor}</cite>
           </blockquote>
 
           {/* Stats grid */}

@@ -76,12 +76,7 @@ export const metadata: Metadata = {
     },
   },
 
-  // Icons
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-  },
+  // Icons are auto-resolved from app/icon.tsx and app/apple-icon.tsx
 
   // Verification (replace with real values when deploying)
   // verification: {
