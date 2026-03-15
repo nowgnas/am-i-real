@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>나는 진짜인가? | Am I Real?</title>
+  <style>
+    /* ───────── BASE ───────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #04040f;
+      --surface:   rgba(255,255,255,0.04);
+      --border:    rgba(255,255,255,0.10);
+      --accent1:   #7c3aed;   /* violet */
+      --accent2:   #2563eb;   /* blue   */
+      --accent3:   #06b6d4;   /* cyan   */
+      --gold:      #f59e0b;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --radius:    16px;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ───────── CANVAS STARS ───────── */
+    #starCanvas {
+      position: fixed; inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ───────── NEBULA blobs ───────── */
+    .nebula {
+      position: fixed; border-radius: 50%;
+      filter: blur(120px); opacity: .25;
+      z-index: 0; pointer-events: none;
+      animation: nebulaPulse 8s ease-in-out infinite alternate;
+    }
+    .nebula-1 { width:500px;height:500px; background:var(--accent1); top:-100px; left:-100px; }
+    .nebula-2 { width:400px;height:400px; background:var(--accent2); bottom:-80px; right:-80px; animation-delay:-4s; }
+    .nebula-3 { width:300px;height:300px; background:var(--accent3); top:40%; left:60%; animation-delay:-2s; }
+    @keyframes nebulaPulse { from{opacity:.18;transform:scale(1);} to{opacity:.30;transform:scale(1.15);} }
+
+    /* ───────── SCREENS ───────── */
+    .screen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 10;
+      padding: 24px;
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .screen.hidden    { opacity:0; pointer-events:none; transform:translateY(30px); }
+    .screen.slide-out { opacity:0; pointer-events:none; transform:translateY(-30px); }
+
+    /* ───────── CARD ───────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(24px);
+      border-radius: var(--radius);
+      padding: 40px 48px;
+      max-width: 640px;
+      width: 100%;
+      box-shadow: 0 8px 40px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+
+    /* ───────── TYPOGRAPHY ───────── */
+    h1 { font-size: clamp(2rem,5vw,3rem); font-weight: 800; line-height:1.15; }
+    h2 { font-size: clamp(1.2rem,3vw,1.6rem); font-weight: 700; }
+    p  { font-size: 1rem; line-height: 1.7; color: var(--muted); }
+    .gradient-text {
+      background: linear-gradient(135deg, var(--accent3) 0%, var(--accent1) 60%, var(--gold) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tag {
+      display: inline-block;
+      font-size: .7rem; letter-spacing:.12em; text-transform:uppercase;
+      color: var(--accent3); margin-bottom: 12px;
+      border: 1px solid rgba(6,182,212,.3); border-radius: 100px;
+      padding: 3px 12px;
+    }
+
+    /* ───────── BUTTONS ───────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 32px;
+      border-radius: 100px;
+      font-size: 1rem; font-weight: 700;
+      cursor: pointer; border: none;
+      transition: transform .2s, box-shadow .2s, opacity .2s;
+    }
+    .btn:hover  { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(124,58,237,.4);
+    }
+    .btn-primary:hover { box-shadow: 0 8px 32px rgba(124,58,237,.6); }
+    .btn-ghost {
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    }
+    .btn-ghost:hover { border-color: var(--accent3); color: var(--text); }
+    .btn-sm { padding: 10px 20px; font-size: .875rem; }
+
+    /* ───────── INTRO ───────── */
+    #introScreen .card { text-align: center; }
+    #introScreen h1 { margin-bottom: 16px; }
+    #introScreen p  { margin-bottom: 32px; }
+    .typing-cursor::after {
+      content:'|'; animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50%{opacity:0;} }
+    .intro-badges { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:28px; }
+    .badge {
+      font-size:.72rem; padding:4px 10px; border-radius:100px;
+      border:1px solid var(--border); color:var(--muted);
+      background:rgba(255,255,255,.03);
+    }
+
+    /* ───────── PROGRESS ───────── */
+    .progress-bar-wrap { width:100%; background:rgba(255,255,255,.07); border-radius:100px; height:4px; margin-bottom:32px; }
+    .progress-bar-fill { height:4px; border-radius:100px; background:linear-gradient(90deg,var(--accent1),var(--accent3)); transition:width .5s ease; }
+    .step-label { font-size:.8rem; color:var(--muted); margin-bottom:8px; text-align:right; }
+
+    /* ───────── QUESTION ───────── */
+    #questionScreen .card { max-width:680px; }
+    .question-context {
+      background: rgba(124,58,237,.12);
+      border: 1px solid rgba(124,58,237,.25);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: .78rem; color: #a78bfa;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .question-text { font-size:1.1rem; font-weight:600; margin-bottom:24px; line-height:1.5; }
+    .choices { display:flex; flex-direction:column; gap:10px; }
+    .choice-btn {
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      text-align: left;
+      cursor: pointer;
+      color: var(--text);
+      font-size: .92rem;
+      transition: border-color .2s, background .2s, transform .15s;
+      position: relative; overflow: hidden;
+    }
+    .choice-btn:hover {
+      border-color: var(--accent1);
+      background: rgba(124,58,237,.12);
+      transform: translateX(4px);
+    }
+    .choice-btn.selected {
+      border-color: var(--accent3);
+      background: rgba(6,182,212,.12);
+      color: #fff;
+    }
+    .choice-btn::before {
+      content:''; position:absolute; left:0; top:0; width:3px; height:100%;
+      background:linear-gradient(180deg,var(--accent1),var(--accent3));
+      opacity:0; transition:opacity .2s;
+    }
+    .choice-btn.selected::before { opacity:1; }
+    .choice-letter {
+      display:inline-block; width:22px; height:22px;
+      border:1px solid var(--border); border-radius:5px;
+      text-align:center; line-height:22px;
+      font-size:.72rem; font-weight:700; margin-right:10px;
+      color:var(--muted);
+    }
+    .choice-btn.selected .choice-letter {
+      background:var(--accent3); border-color:var(--accent3); color:#000;
+    }
+    .question-nav { display:flex; justify-content:space-between; align-items:center; margin-top:24px; }
+
+    /* ───────── ANALYSIS ───────── */
+    #analysisScreen { text-align:center; }
+    #analysisScreen .card { align-items:center; display:flex; flex-direction:column; gap:24px; }
+    .orbit-wrap { position:relative; width:120px; height:120px; }
+    .orbit-center {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:30px; height:30px; border-radius:50%;
+      background:linear-gradient(135deg,var(--accent1),var(--accent3));
+      box-shadow:0 0 20px var(--accent1);
+    }
+    .orbit-ring {
+      position:absolute; top:50%; left:50%;
+      border-radius:50%; border:1px solid rgba(255,255,255,.15);
+      animation:spin 2s linear infinite;
+    }
+    .orbit-ring:nth-child(2){ width:60px;height:60px;  transform:translate(-50%,-50%); animation-duration:2s; }
+    .orbit-ring:nth-child(3){ width:90px;height:90px;  transform:translate(-50%,-50%); animation-duration:3.5s; animation-direction:reverse; }
+    .orbit-ring:nth-child(4){ width:120px;height:120px;transform:translate(-50%,-50%); animation-duration:5s; }
+    .orbit-dot {
+      position:absolute; top:-4px; left:50%; transform:translateX(-50%);
+      width:8px; height:8px; border-radius:50%; background:var(--accent3);
+      box-shadow:0 0 8px var(--accent3);
+    }
+    @keyframes spin { to{transform:translate(-50%,-50%) rotate(360deg);} }
+    .analysis-log {
+      font-family: 'Courier New', monospace;
+      font-size:.78rem; color:var(--accent3);
+      text-align:left; width:100%;
+      background:rgba(6,182,212,.05); border:1px solid rgba(6,182,212,.15);
+      border-radius:10px; padding:14px;
+      min-height:80px; line-height:1.8;
+    }
+    .log-line { opacity:0; animation:logAppear .3s forwards; }
+    @keyframes logAppear { to{opacity:1;} }
+
+    /* ───────── RESULT ───────── */
+    #resultScreen .card { text-align:center; max-width:680px; }
+    .result-emoji { font-size:4rem; margin-bottom:12px; display:block; animation:floatEmoji 3s ease-in-out infinite; }
+    @keyframes floatEmoji { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
+    .result-type { font-size:.9rem; color:var(--accent3); margin-bottom:8px; }
+    .result-title { font-size:2rem; font-weight:800; margin-bottom:16px; }
+    .result-desc { font-size:.95rem; line-height:1.8; color:var(--muted); margin-bottom:12px; }
+    .result-quote {
+      border-left:3px solid var(--accent1);
+      padding:10px 16px; margin:16px 0;
+      font-size:.85rem; color:#a78bfa; text-align:left;
+      background:rgba(124,58,237,.08); border-radius:0 8px 8px 0;
+      font-style:italic;
+    }
+    .result-stats {
+      display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0;
+    }
+    .stat-box {
+      background:rgba(255,255,255,.04); border:1px solid var(--border);
+      border-radius:10px; padding:12px 16px; text-align:left;
+    }
+    .stat-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+    .stat-value { font-size:1.1rem; font-weight:700; margin-top:2px; }
+    .result-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:24px; }
+    .rarity-badge {
+      display:inline-block; padding:3px 12px; border-radius:100px;
+      font-size:.72rem; font-weight:700; letter-spacing:.08em;
+      margin-bottom:8px;
+    }
+    .rarity-common   { background:rgba(148,163,184,.15); color:#94a3b8; border:1px solid rgba(148,163,184,.3); }
+    .rarity-rare     { background:rgba(6,182,212,.15);   color:#06b6d4;  border:1px solid rgba(6,182,212,.3); }
+    .rarity-epic     { background:rgba(124,58,237,.15);  color:#a78bfa;  border:1px solid rgba(124,58,237,.3); }
+    .rarity-legendary{ background:rgba(245,158,11,.15);  color:#f59e0b;  border:1px solid rgba(245,158,11,.3); }
+    .rarity-unique   { background:rgba(239,68,68,.15);   color:#f87171;  border:1px solid rgba(239,68,68,.3); }
+
+    /* toast */
+    #toast {
+      position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(20px);
+      background:rgba(6,182,212,.9); color:#000; font-weight:700;
+      padding:10px 24px; border-radius:100px; font-size:.875rem;
+      opacity:0; transition:opacity .3s, transform .3s; z-index:999;
+    }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* scrollable result on small screens */
+    #resultScreen { overflow-y:auto; align-items:flex-start; padding-top:40px; padding-bottom:40px; }
+
+    /* ───────── RESPONSIVE ───────── */
+    @media(max-width:480px){
+      .card { padding:28px 24px; }
+      .result-stats { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="starCanvas"></canvas>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<!-- ━━━━━━━━ 1. INTRO ━━━━━━━━ -->
+<div class="screen" id="introScreen">
+  <div class="card">
+    <span class="tag">🔭 우주적 진단</span>
+    <h1><span class="gradient-text" id="introTitle"></span></h1>
+    <div class="intro-badges">
+      <span class="badge">평행우주</span>
+      <span class="badge">시뮬레이션 이론</span>
+      <span class="badge">통속의 뇌</span>
+      <span class="badge">자유의지</span>
+    </div>
+    <p>
+      당신이 지금 이 화면을 보고 있다는 사실 자체가,<br>
+      이미 설계된 것일 수 있습니다.<br><br>
+      5가지 질문으로 당신이 어떤 우주에 존재하는지<br>
+      진단해 드립니다. 정직하게 답해주세요.
+    </p>
+    <button class="btn btn-primary" onclick="startQuiz()">
+      ✦ 진단 시작하기
+    </button>
+  </div>
+</div>
+
+<!-- ━━━━━━━━ 2. QUESTION ━━━━━━━━ -->
+<div class="screen hidden" id="questionScreen">
+  <div class="card">
+    <div class="step-label" id="stepLabel">1 / 5</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill" style="width:20%"></div>
+    </div>
+    <div class="question-context" id="questionContext"></div>
+    <div class="question-text" id="questionText"></div>
+    <div class="choices" id="choicesContainer"></div>
+    <div class="question-nav">
+      <button class="btn btn-ghost btn-sm" id="prevBtn" onclick="prevQuestion()">← 이전</button>
+      <button class="btn btn-primary btn-sm" id="nextBtn" onclick="nextQuestion()" disabled>다음 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━━━━━━ 3. ANALYSIS ━━━━━━━━ -->
+<div class="screen hidden" id="analysisScreen">
+  <div class="card">
+    <div class="orbit-wrap">
+      <div class="orbit-center"></div>
+      <div class="orbit-ring"><div class="orbit-dot"></div></div>
+      <div class="orbit-ring"><div class="orbit-dot" style="background:#a78bfa;box-shadow:0 0 8px #a78bfa"></div></div>
+      <div class="orbit-ring"><div class="orbit-dot" style="background:#f59e0b;box-shadow:0 0 8px #f59e0b"></div></div>
+    </div>
+    <h2 style="text-align:center">우주 시뮬레이션 분석 중...</h2>
+    <p style="text-align:center;font-size:.85rem">당신의 의식 패턴을 우주 데이터베이스와 대조하고 있습니다</p>
+    <div class="analysis-log" id="analysisLog"></div>
+  </div>
+</div>
+
+<!-- ━━━━━━━━ 4. RESULT ━━━━━━━━ -->
+<div class="screen hidden" id="resultScreen">
+  <div class="card">
+    <span class="rarity-badge" id="rarityBadge"></span>
+    <span class="result-emoji" id="resultEmoji"></span>
+    <div class="result-type" id="resultType"></div>
+    <div class="result-title gradient-text" id="resultTitle"></div>
+    <div class="result-desc" id="resultDesc"></div>
+    <div class="result-quote" id="resultQuote"></div>
+    <div class="result-stats" id="resultStats"></div>
+    <div class="result-actions">
+      <button class="btn btn-primary" onclick="copyResult()">📋 결과 복사</button>
+      <button class="btn btn-ghost" onclick="restartQuiz()">↩ 다시 하기</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">클립보드에 복사되었습니다!</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   STAR CANVAS
+═══════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('starCanvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, stars = [], shooting = [];
+
+  function resize(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; initStars(); }
+
+  function initStars(){
+    stars = Array.from({length:200}, ()=>({
+      x: Math.random()*W, y: Math.random()*H,
+      r: Math.random()*1.5+.3,
+      alpha: Math.random()*.8+.2,
+      speed: Math.random()*.3+.1,
+      twinkleSpeed: Math.random()*.02+.005,
+      twinkleDir: Math.random()>.5?1:-1,
+    }));
+  }
+
+  function spawnShooting(){
+    if(Math.random()<.003){
+      shooting.push({
+        x: Math.random()*W*.7, y: Math.random()*H*.3,
+        vx: 6+Math.random()*4, vy: 3+Math.random()*2,
+        life:1, trail:[]
+      });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // twinkling stars
+    stars.forEach(s=>{
+      s.alpha += s.twinkleSpeed * s.twinkleDir;
+      if(s.alpha>1||s.alpha<.1) s.twinkleDir*=-1;
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${s.alpha})`;
+      ctx.fill();
+    });
+
+    // shooting stars
+    spawnShooting();
+    shooting = shooting.filter(s=>{
+      s.trail.push({x:s.x,y:s.y});
+      if(s.trail.length>20) s.trail.shift();
+      s.x+=s.vx; s.y+=s.vy; s.life-=.025;
+      if(s.life<=0) return false;
+      for(let i=0;i<s.trail.length;i++){
+        const a=(i/s.trail.length)*s.life;
+        ctx.beginPath();
+        ctx.arc(s.trail[i].x,s.trail[i].y,.8,0,Math.PI*2);
+        ctx.fillStyle=`rgba(200,220,255,${a})`;
+        ctx.fill();
+      }
+      return true;
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize(); draw();
+})();
+
+/* ═══════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════ */
+const QUESTIONS = [
+  {
+    context: "🔬 물리학자 닐 디그래스 타이슨은 \"우리가 시뮬레이션 안에 있을 확률은 50% 이상\"이라 말했습니다. 당신의 일상 속 반복적인 패턴을 떠올려 보세요.",
+    text: "데자뷔를 경험한 적이 있나요? 이미 일어난 일이 다시 반복되는 듯한 느낌.",
+    choices: [
+      { text: "거의 매일 느낀다. 삶이 루프 같다.", score: { sim:3, parallel:2, bug:1 } },
+      { text: "가끔 느끼지만 우연이라 생각한다.", score: { sim:1, free:1 } },
+      { text: "느낀다. 그리고 그게 불안하다.", score: { brain:2, bug:2 } },
+      { text: "별로 없다. 매 순간이 새롭게 느껴진다.", score: { free:3 } },
+    ]
+  },
+  {
+    context: "🎬 당신의 인생이 넷플릭스 드라마라면? 철학자 데카르트는 \"나는 생각한다, 고로 나는 존재한다\"고 했지만, 그 생각조차 설계된 것일 수 있습니다.",
+    text: "삶이 지나치게 드라마틱하게 흘러간다고 느낀 적이 있나요?",
+    choices: [
+      { text: "항상. 내 인생은 막장 드라마 수준이다.", score: { sim:3, bug:2 } },
+      { text: "가끔. 타이밍이 너무 절묘할 때가 있다.", score: { parallel:2, sim:1 } },
+      { text: "그 반대. 너무 평범하고 반복적이다.", score: { sim:2, brain:1 } },
+      { text: "내가 만들어가는 것이지 운이 아니다.", score: { free:3 } },
+    ]
+  },
+  {
+    context: "🧠 철학자 힐러리 퍼트넘의 '통속의 뇌' 실험: 당신의 뇌가 통 안에 있고, 모든 감각이 컴퓨터로 시뮬레이션된다면 당신은 알 수 있을까요?",
+    text: "지금 당신이 보고 듣고 느끼는 것들이 진짜라고 확신할 수 있나요?",
+    choices: [
+      { text: "전혀. 모든 것이 전기 신호일 수 있다.", score: { brain:3, sim:1 } },
+      { text: "가끔 의심스럽다. 너무 선명하거나 너무 흐릿할 때.", score: { brain:2, bug:1 } },
+      { text: "대체로 믿는다. 물리적 감각은 신뢰할 수 있다.", score: { free:2, parallel:1 } },
+      { text: "완전히 확신한다. 의심하는 자체가 시간 낭비다.", score: { free:3 } },
+    ]
+  },
+  {
+    context: "🌌 닉 보스트롬의 시뮬레이션 가설: \"기술이 충분히 발달한 문명은 조상 시뮬레이션을 무한히 실행할 것이다.\" 그렇다면 우리는 그 시뮬레이션 속 존재일 가능성이 높다.",
+    text: "주변 사람들이 당신을 위한 배경 인물처럼 느껴진 적이 있나요?",
+    choices: [
+      { text: "자주. 내 시야에서 사라지면 존재하지 않는 것 같다.", score: { sim:3, brain:2 } },
+      { text: "가끔. 특히 나와 관계없는 사람들은 그렇게 느껴진다.", score: { sim:2, parallel:1 } },
+      { text: "없다. 모든 사람이 각자의 우주를 살고 있다.", score: { parallel:2, free:1 } },
+      { text: "오히려 내가 누군가의 배경 인물일 것 같다.", score: { bug:3, brain:1 } },
+    ]
+  },
+  {
+    context: "⚡ 자유의지 논쟁: 신경과학자 벤저민 리벳의 실험에 따르면, 뇌는 '의식적 결정'보다 0.35초 앞서 활동을 시작합니다. 우리의 선택은 진짜 선택일까요?",
+    text: "당신의 '자유로운 선택'이라 생각했던 것들이 사실 예측 가능했을 것 같나요?",
+    choices: [
+      { text: "그렇다. 내 패턴은 너무 반복적이고 예측 가능하다.", score: { sim:3, brain:1 } },
+      { text: "일부는 그렇다. 특히 중요한 결정들이 그랬다.", score: { parallel:2, sim:1 } },
+      { text: "아니다. 나는 종종 예상치 못한 선택을 한다.", score: { free:2, bug:2 } },
+      { text: "절대 아니다. 나는 매 순간 주체적으로 결정한다.", score: { free:3 } },
+    ]
+  },
+];
+
+const RESULTS = {
+  sim: {
+    emoji: "🤖",
+    rarity: "common",
+    rarityText: "COMMON · 가장 흔한 유형",
+    type: "유형 ① | Simulation NPC",
+    title: "시뮬레이션 NPC",
+    desc: "당신은 이 시뮬레이션의 배경 캐릭터입니다. 당신의 행동 패턴은 이미 코드로 짜여 있으며, 선택지는 언제나 2~3개로 제한됩니다. 걱정 마세요. 대부분의 존재가 이 범주에 속합니다. 당신이 특별하지 않다는 사실이, 오히려 안전하다는 증거일 수 있습니다.",
+    quote: "\"The matrix is a system, Neo. That system is our enemy.\" — Morpheus",
+    stats: [
+      { label: "자유의지 지수", value: "12%" },
+      { label: "시뮬레이션 적합도", value: "94%" },
+      { label: "우주 내 역할", value: "NPC" },
+      { label: "존재 희귀도", value: "★☆☆☆☆" },
+    ]
+  },
+  parallel: {
+    emoji: "🌀",
+    rarity: "rare",
+    rarityText: "RARE · 드문 유형",
+    type: "유형 ② | Parallel Universe Traveler",
+    title: "평행우주 여행자",
+    desc: "당신은 여러 우주의 경계를 무의식적으로 넘나들고 있습니다. 데자뷔는 당신이 이미 다른 우주에서 경험한 일들의 잔상입니다. 당신의 '이상한 타이밍'과 '절묘한 우연'들은 평행 우주들이 일시적으로 겹치는 순간들입니다.",
+    quote: "\"Every moment happens twice: inside and outside, and they are two different histories.\" — Salman Rushdie",
+    stats: [
+      { label: "우주 접속 빈도", value: "다차원" },
+      { label: "데자뷔 지수", value: "78%" },
+      { label: "우주 내 역할", value: "경계 탐험가" },
+      { label: "존재 희귀도", value: "★★☆☆☆" },
+    ]
+  },
+  brain: {
+    emoji: "🧠",
+    rarity: "epic",
+    rarityText: "EPIC · 희귀한 유형",
+    type: "유형 ③ | Brain in a Vat",
+    title: "통속의 뇌",
+    desc: "당신의 모든 경험은 전기 신호로 변환된 데이터입니다. 당신이 느끼는 사랑, 고통, 아름다움, 모두 뉴런 발화의 패턴일 뿐입니다. 하지만 역설적으로, 그것을 인식하는 당신은 가장 철학적으로 깨어 있는 존재일 수 있습니다.",
+    quote: "\"나는 생각한다, 고로 나는 존재한다. — 그러나 내 생각이 시뮬레이션이라면?\" — 데카르트의 악마 변형",
+    stats: [
+      { label: "현실 신뢰도", value: "23%" },
+      { label: "철학적 각성도", value: "91%" },
+      { label: "우주 내 역할", value: "회의주의 탐험가" },
+      { label: "존재 희귀도", value: "★★★☆☆" },
+    ]
+  },
+  free: {
+    emoji: "✨",
+    rarity: "legendary",
+    rarityText: "LEGENDARY · 극히 희귀",
+    type: "유형 ④ | Free Will Holder",
+    title: "자유의지 보유자",
+    desc: "축하합니다. 이 우주에서 극히 드문 케이스입니다. 당신은 시뮬레이션의 스크립트를 벗어나 진정한 자유의지를 행사하고 있습니다. 혹은, 그렇게 믿도록 가장 정교하게 설계된 존재일 수 있습니다. 어느 쪽이든, 당신은 특별합니다.",
+    quote: "\"Man is condemned to be free.\" — Jean-Paul Sartre",
+    stats: [
+      { label: "자유의지 지수", value: "89%" },
+      { label: "시뮬레이션 이탈률", value: "71%" },
+      { label: "우주 내 역할", value: "주인공 후보" },
+      { label: "존재 희귀도", value: "★★★★☆" },
+    ]
+  },
+  bug: {
+    emoji: "🐛",
+    rarity: "unique",
+    rarityText: "UNIQUE · 분류 불가",
+    type: "유형 ⑤ | Universe Bug",
+    title: "우주의 버그",
+    desc: "시스템이 당신을 처리하지 못하고 있습니다. 당신의 답변 패턴은 시뮬레이션의 어떤 카테고리에도 깔끔하게 분류되지 않습니다. 이것은 오류일 수 있고, 혹은 당신이 시스템 자체의 균열이거나, 설계자가 의도적으로 숨겨둔 예외 케이스일 수 있습니다.",
+    quote: "\"There is no spoon.\" — The Matrix",
+    stats: [
+      { label: "분류 가능성", value: "ERROR" },
+      { label: "시스템 충돌률", value: "??%" },
+      { label: "우주 내 역할", value: "예외 처리 불가" },
+      { label: "존재 희귀도", value: "★★★★★" },
+    ]
+  },
+};
+
+/* ═══════════════════════════════════════════
+   STATE & LOGIC
+═══════════════════════════════════════════ */
+let currentQ  = 0;
+let answers   = [];   // stores chosen choice index per question
+let scores    = { sim:0, parallel:0, brain:0, free:0, bug:0 };
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    if (s.id === id) {
+      s.classList.remove('hidden');
+    } else {
+      s.classList.add('hidden');
+    }
+  });
+}
+
+/* ── INTRO TYPING ── */
+(function typeIntro(){
+  const el    = document.getElementById('introTitle');
+  const text  = '나는 진짜인가?';
+  let i = 0;
+  el.classList.add('typing-cursor');
+  const t = setInterval(()=>{
+    el.textContent += text[i++];
+    if(i>=text.length){ clearInterval(t); setTimeout(()=>el.classList.remove('typing-cursor'),800); }
+  }, 120);
+})();
+
+/* ── START QUIZ ── */
+function startQuiz(){
+  currentQ = 0;
+  answers  = new Array(QUESTIONS.length).fill(null);
+  scores   = { sim:0, parallel:0, brain:0, free:0, bug:0 };
+  renderQuestion();
+  transitionTo('questionScreen');
+}
+
+/* ── RENDER QUESTION ── */
+function renderQuestion(){
+  const q = QUESTIONS[currentQ];
+  const total = QUESTIONS.length;
+
+  document.getElementById('stepLabel').textContent    = `${currentQ+1} / ${total}`;
+  document.getElementById('progressFill').style.width = `${((currentQ+1)/total)*100}%`;
+  document.getElementById('questionContext').innerHTML = q.context;
+  document.getElementById('questionText').textContent  = q.text;
+
+  const container = document.getElementById('choicesContainer');
+  container.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.choices.forEach((c,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn' + (answers[currentQ]===i?' selected':'');
+    btn.innerHTML = `<span class="choice-letter">${letters[i]}</span>${c.text}`;
+    btn.onclick = ()=>selectChoice(i);
+    container.appendChild(btn);
+  });
+
+  document.getElementById('prevBtn').style.visibility = currentQ===0 ? 'hidden':'visible';
+  document.getElementById('nextBtn').disabled = answers[currentQ] === null;
+  document.getElementById('nextBtn').textContent = currentQ===total-1 ? '결과 보기 →' : '다음 →';
+}
+
+function selectChoice(i){
+  answers[currentQ] = i;
+  document.querySelectorAll('.choice-btn').forEach((b,j)=>{
+    b.classList.toggle('selected', j===i);
+  });
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQuestion(){
+  if(answers[currentQ]===null) return;
+  // accumulate score
+  const choice = QUESTIONS[currentQ].choices[answers[currentQ]];
+  Object.entries(choice.score).forEach(([k,v])=>{ scores[k]=(scores[k]||0)+v; });
+
+  if(currentQ < QUESTIONS.length-1){
+    currentQ++;
+    renderQuestion();
+  } else {
+    runAnalysis();
+  }
+}
+
+function prevQuestion(){
+  if(currentQ>0){ currentQ--; renderQuestion(); }
+}
+
+/* ── ANALYSIS ── */
+function runAnalysis(){
+  transitionTo('analysisScreen');
+  const log   = document.getElementById('analysisLog');
+  log.innerHTML = '';
+  const lines = [
+    '> 의식 패턴 스캔 시작...',
+    '> 자유의지 지수 측정 중...',
+    '> 평행 우주 간섭 검사...',
+    '> 시뮬레이션 데이터베이스 대조...',
+    '> 존재 분류 알고리즘 실행...',
+    '> 분석 완료. 결과 렌더링 중...',
+  ];
+  let delay = 0;
+  lines.forEach((line, i)=>{
+    setTimeout(()=>{
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      div.style.animationDelay = '0s';
+      div.textContent = line;
+      log.appendChild(div);
+    }, delay);
+    delay += 500 + Math.random()*200;
+  });
+  setTimeout(showResult, delay+600);
+}
+
+/* ── RESULT ── */
+function showResult(){
+  const winner = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+  const r = RESULTS[winner];
+
+  const rarityMap = { common:'rarity-common', rare:'rarity-rare', epic:'rarity-epic', legendary:'rarity-legendary', unique:'rarity-unique' };
+  document.getElementById('rarityBadge').className  = `rarity-badge ${rarityMap[r.rarity]}`;
+  document.getElementById('rarityBadge').textContent = r.rarityText;
+  document.getElementById('resultEmoji').textContent = r.emoji;
+  document.getElementById('resultType').textContent  = r.type;
+  document.getElementById('resultTitle').textContent = r.title;
+  document.getElementById('resultDesc').textContent  = r.desc;
+  document.getElementById('resultQuote').textContent = r.quote;
+
+  const statsEl = document.getElementById('resultStats');
+  statsEl.innerHTML = r.stats.map(s=>`
+    <div class="stat-box">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.value}</div>
+    </div>
+  `).join('');
+
+  transitionTo('resultScreen');
+  // scroll to top of result
+  document.getElementById('resultScreen').scrollTop = 0;
+}
+
+/* ── SHARE / COPY ── */
+function copyResult(){
+  const type  = document.getElementById('resultType').textContent;
+  const title = document.getElementById('resultTitle').textContent;
+  const desc  = document.getElementById('resultDesc').textContent;
+  const text  = `🌌 나는 진짜인가? — 철학 우주 진단\n\n${type}\n${title}\n\n${desc}\n\n🔗 나도 해보기 → Am I Real?`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2500);
+  });
+}
+
+function restartQuiz(){
+  document.getElementById('resultScreen').scrollTop = 0;
+  transitionTo('introScreen');
+}
+
+/* ── TRANSITION ── */
+function transitionTo(id){
+  document.querySelectorAll('.screen').forEach(s=>{
+    if(!s.classList.contains('hidden')){
+      s.classList.add('slide-out');
+      setTimeout(()=>{ s.classList.add('hidden'); s.classList.remove('slide-out'); },600);
+    }
+  });
+  setTimeout(()=>{
+    const target = document.getElementById(id);
+    target.classList.remove('hidden');
+  }, 300);
+}
+</script>
+</body>
+</html>
